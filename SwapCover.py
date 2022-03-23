@@ -2,7 +2,7 @@
 # Author: Jean-Marc Digne - https://github.com/jmdigne
 '''
 **** SwapCover ****
-Usage: /ssdhome/jm/PycharmProjects/Books/SwapCover.py filename.epub
+Usage: /ssdhome/jm/PycharmProjects/Books/SwapCover.py in.epub out.epub --log-level=info
 
 Run/Debug as
 /ssdhome/jm/PycharmProjects/Books/SwapCover.py /ssdhome/jm/PycharmProjects/Books/test.epub /ssdhome/jm/PycharmProjects/Books/target.epub
@@ -48,8 +48,8 @@ namespaces = {
 }
 
 
-def main():
-    print('**** SwapCover ****')
+def swap_cover(epubfile_source, epubfile_target):
+    logging.info('**** SwapCover ****')
     cover_before = None
     cover_after = None
 
@@ -65,22 +65,22 @@ def main():
     try:
         cover_before = Image.open(get_cover_methode_1(epubfile_source))
     except BaseException as err:
-        print('* get_cover_methode_1 -- cover not found')
+        logging.debug('* get_cover_methode_1 -- cover not found')
         # print(f"Unexpected {err=}, {type(err)=}")
         # raise
 
     if cover_before is None:
-        print('**** continuer extraction cover')
+        logging.debug('**** continuer extraction cover')
          # Extracting existing cover (Methode 2)
         try:
             cover_before = Image.open(get_cover_methode_2(epubfile_source))
         except BaseException as err:
-            print('* get_cover_methode_2 -- cover not found')
+            logging.debug('* get_cover_methode_2 -- cover not found')
             # print(f"Unexpected {err=}, {type(err)=}")
             # raise
 
     if cover_before is None:
-        print('**** continuer extraction cover')
+        logging.debug('**** continuer extraction cover')
 
 #======== End of Main ==============================================================
 
@@ -94,7 +94,7 @@ def get_image_number(epub_path):
 
     for x in book.get_items_of_type(ebooklib.ITEM_IMAGE):
         image_number = image_number + 1
-    print('* get_image_number - number of images found = ' + str(image_number))
+    logging.info('* get_image_number - number of images found = ' + str(image_number))
     return image_number
 
 
@@ -145,7 +145,7 @@ def get_cover_methode_1(epub_path):
         # In order to get the full path for the cover image, we have to join rootfile_path and cover_href:
         cover_path = os.path.join(os.path.dirname(rootfile_path), cover_href)
 
-        print('* get_cover_methode_1 - cover found = ' + cover_path)
+        logging.info('* get_cover_methode_1 - cover found = ' + cover_path)
         # We return the image
         return z.open(cover_path)
 
@@ -192,4 +192,4 @@ if __name__ == "__main__":
     if args.out_epub_filepath == args.in_epub_filepath:
         raise FileExistsError(args.out_epub_filepath)
 
-    sys.exit(main())
+    sys.exit(swap_cover(args.in_epub_filepath,args.out_epub_filepath))
