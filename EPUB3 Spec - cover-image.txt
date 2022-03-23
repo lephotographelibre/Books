@@ -1,0 +1,17 @@
+From PSEC EPUB3.2  W3C : https://www.w3.org/publishing/epub3/epub-packages.html#sec-cover-image
+
+
+Manifest propertie - content.opf file
+
+cover-image
+
+
+Name:	cover-image
+Description:	The cover-image property identifies the described Publication Resource as the cover image for the Publication.
+Applies to:	All raster and vector image types [EPUB32]
+Cardinality:	Zero or one
+Usage:	Optional.
+
+The following example shows a manifest item element that represents the cover image.
+
+<item properties="cover-image" id="ci" href="cover.svg" media-type="image/svg+xml" />

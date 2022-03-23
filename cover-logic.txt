@@ -1,0 +1,20 @@
+
+From: https://wiki.mobileread.com/wiki/Ebook_Covers
+
+1 - Are there images in the epub file ? --> R1='yes/no'
+
+2 - OPF entries id="cover"              --> R2='yes/no'
+<item id="cover"       href="the-cover-filename.xhtml"    media-type="application/xhtml+xml"/>
+
+3 - OPF entries id="cover-image"	--> R3='yes/no'
+ <item id="cover-image" href="the_cover.jpg" media-type="image/jpeg"/>
+
+4 - OPF entries <meta name="cover" content="cover-image"/>	--> R4='yes/no'
+
+5 - OPF Enties  <guide> <reference type="cover" href="the-cover-filename.xhtml" /> </guide> --> R5='yes/no'
+
+6 - cover page ?  Note that a cover.xhtml file is not required but recommended. --> R6='yes/no'
+    ?? whar"s a cover page ??
+    - 1st element dans le manifest
+    - fichiers s'appelant cover.xxx (html, xhtml)
+    - <guide> <reference type="cover" href="the-cover-filename.xhtml" /> </guide>
