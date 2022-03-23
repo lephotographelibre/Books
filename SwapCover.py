@@ -47,7 +47,7 @@ namespaces = {
     "xsi": "http://www.w3.org/2001/XMLSchema-instance",
 }
 
-#===== Main ===================================================================================
+
 def main():
     print('**** SwapCover ****')
     cover_before = None
