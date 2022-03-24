@@ -8,14 +8,13 @@ Run/Debug as
 /ssdhome/jm/PycharmProjects/Books/SwapCover.py /ssdhome/jm/PycharmProjects/Books/test.epub /ssdhome/jm/PycharmProjects/Books/target.epub
 
 Logic to find the cover within an EPUB FILE
-- method 1 -
+- method 1 - aka Dublin Core defined field or EPUB 2 Markup style
     content.opf XML Parsing to find <meta ... name="cover"...>
-- method 2 -
-    using Ebooklib search an content.opf item with properties="cover-image" ie. iten as ebooklib.ITEM_COVER
+- method 2 - EPUB 3 Markup style
+    using Ebooklib search a manifest item with properties="cover-image" ie. item as ebooklib.ITEM_COVER
     such as <item id="image.jpeg" href="Images/image.jpeg" media-type="image/jpeg" properties="cover-image"/>
 
-TODO
-    - change trace with loggibg packahe (logging, info, debog, etc)
+
 '''
 
 # Imports
@@ -30,6 +29,10 @@ from PIL import Image
 import sys
 import logging
 import argparse
+import mimetypes
+from datetime import datetime
+from time import gmtime, strftime
+
 
 '''
 
@@ -48,14 +51,17 @@ namespaces = {
 }
 
 
-def swap_cover(epubfile_source, epubfile_target):
+def swap_cover(epubfile_source, epubfile_target, new_cover):
     logging.info('**** SwapCover ****')
     cover_before = None
-    cover_after = None
+    cover_after = new_cover
 
     # Get epub filename
     epubfile_source = args.in_epub_filepath
+    date = datetime.today().strftime('_%H_%M_%S')
     epubfile_target = args.out_epub_filepath
+
+
     # Is there at least 1 image file within this epub file
     if get_image_number(epubfile_source) < 1:
         print('**** SwapCover **** No cover in this epub file -- nothing to swap')
@@ -63,7 +69,7 @@ def swap_cover(epubfile_source, epubfile_target):
 
     # Extracting existing cover (Methode 1)
     try:
-        cover_before = Image.open(get_cover_methode_1(epubfile_source))
+        cover_before = get_cover_methode_1(epubfile_source)
     except BaseException as err:
         logging.debug('* get_cover_methode_1 -- cover not found')
         # print(f"Unexpected {err=}, {type(err)=}")
@@ -71,7 +77,7 @@ def swap_cover(epubfile_source, epubfile_target):
 
     if cover_before is None:
         logging.debug('**** continuer extraction cover')
-         # Extracting existing cover (Methode 2)
+        # Extracting existing cover (Methode 2)
         try:
             cover_before = Image.open(get_cover_methode_2(epubfile_source))
         except BaseException as err:
@@ -84,9 +90,43 @@ def swap_cover(epubfile_source, epubfile_target):
         exit()
 
     # A cover has been found
-    logging.debug('**** Cover Image is : ' + str(cover_before))
+    logging.debug('**** Cover Image is : ' + cover_before)
 
-#======== End of Main ==============================================================
+    # Browse source epub
+    with zipfile.ZipFile(args.in_epub_filepath, 'r') as in_book:
+        with zipfile.ZipFile(args.out_epub_filepath, 'w') as out_book:
+            for name in in_book.namelist():
+                with in_book.open(name, 'r') as in_file:
+                    content = in_file.read()
+                    # identify cover file within the epub as zip container
+                    if name == cover_before:
+                        logging.debug(' filename = ' + name)
+                        with in_book.open(name, 'r') as in_file:
+                            content = in_file.read()
+                            # Guess the MIME type of a file.
+                            type_, encoding = mimetypes.guess_type(name)
+
+                            if type_:
+                                type_, subtype = type_.split('/')
+                                logging.debug(' old cover type = ' + type_)
+                                logging.debug(' old cover subtype = ' + subtype)
+                            # Open new cover and identify mime type and check if a conversion is needed
+                            typenew_, encodingnew = mimetypes.guess_type(new_cover)
+                            if typenew_:
+                                typenew_, subtypenew = typenew_.split('/')
+                                logging.debug(' new cover type = ' + typenew_)
+                                logging.debug(' new cover subtype = ' + subtypenew)
+                            if type != typenew_:
+                                logging.debug(' Image cover subtypenew does not match  old = ' + subtype + ' new = ' + subtypenew)
+                    # Write file as result  into target epub
+                    out_book.writestr(name, content)
+
+#TODO
+# open an nested loop for out book        with zipfile.ZipFile(args.out_epub_filepath, 'w') as out_book:
+# convert image if needed
+# insert the new image into the epub out
+
+# ======== End of Main ==============================================================
 
 def get_image_number(epub_path):
     ''' Return the number of image files from an epub archive. '''
@@ -103,7 +143,7 @@ def get_image_number(epub_path):
 
 
 def get_cover_methode_1(epub_path):
-    ''' Return the cover image file from an epub archive. '''
+    ''' Return the cover image file path from an epub archive. '''
 
     # We open the epub archive using zipfile.ZipFile():
     with zipfile.ZipFile(epub_path) as z:
@@ -151,7 +191,9 @@ def get_cover_methode_1(epub_path):
 
         logging.info('* get_cover_methode_1 - cover found = ' + cover_path)
         # We return the image
-        return z.open(cover_path)
+        # z.open(cover_path)
+        # We return the cover path within zip
+        return cover_path
 
 
 def get_cover_methode_2(epub_path):
@@ -175,6 +217,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('in_epub_filepath')
     parser.add_argument('out_epub_filepath')
+    parser.add_argument('new_cover_filepath')
     parser.add_argument('-l', '--log-level')
 
     args = parser.parse_args()
@@ -196,4 +239,7 @@ if __name__ == "__main__":
     if args.out_epub_filepath == args.in_epub_filepath:
         raise FileExistsError(args.out_epub_filepath)
 
-    sys.exit(swap_cover(args.in_epub_filepath,args.out_epub_filepath))
+    if not os.path.isfile(args.new_cover_filepath):
+        raise FileNotFoundError(args.new_cover_filepath)
+
+    sys.exit(swap_cover(args.in_epub_filepath, args.out_epub_filepath, args.new_cover_filepath))
