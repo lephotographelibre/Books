@@ -80,7 +80,11 @@ def swap_cover(epubfile_source, epubfile_target):
             # raise
 
     if cover_before is None:
-        logging.debug('**** continuer extraction cover')
+        logging.info('**** No cover found, Sorry !')
+        exit()
+
+    # A cover has been found
+    logging.debug('**** Cover Image is : ' + str(cover_before))
 
 #======== End of Main ==============================================================
 
