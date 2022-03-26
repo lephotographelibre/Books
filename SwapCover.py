@@ -13,7 +13,8 @@ Logic to find the cover within an EPUB FILE
 - method 2 - EPUB 3 Markup style
     using Ebooklib search a manifest item with properties="cover-image" ie. item as ebooklib.ITEM_COVER
     such as <item id="image.jpeg" href="Images/image.jpeg" media-type="image/jpeg" properties="cover-image"/>
-
+-TODO   <manifest>
+    <item id="cover" href="Images/cover.jpeg" media-type="image/jpeg"/>
 
 '''
 
@@ -104,20 +105,29 @@ def swap_cover(epubfile_source, epubfile_target, new_cover):
                         with in_book.open(name, 'r') as in_file:
                             content = in_file.read()
                             # Guess the MIME type of a file.
-                            type_, encoding = mimetypes.guess_type(name)
+                            mimetype_, encoding = mimetypes.guess_type(name)
 
-                            if type_:
-                                type_, subtype = type_.split('/')
+                            if mimetype_:
+                                type_, subtype = mimetype_.split('/')
                                 logging.debug(' old cover type = ' + type_)
                                 logging.debug(' old cover subtype = ' + subtype)
+
                             # Open new cover and identify mime type and check if a conversion is needed
-                            typenew_, encodingnew = mimetypes.guess_type(new_cover)
-                            if typenew_:
-                                typenew_, subtypenew = typenew_.split('/')
+                            mimetypenew_, encodingnew = mimetypes.guess_type(new_cover)
+                            if mimetypenew_:
+                                typenew_, subtypenew = mimetypenew_.split('/')
                                 logging.debug(' new cover type = ' + typenew_)
                                 logging.debug(' new cover subtype = ' + subtypenew)
-                            if type != typenew_:
-                                logging.debug(' Image cover subtypenew does not match  old = ' + subtype + ' new = ' + subtypenew)
+
+                            if mimetype_ == mimetypenew_:
+                                logging.debug(' Image cover subtype  match --> existing = ' + mimetype_ + ' new = ' + mimetypenew_)
+                                logging.debug(' So no conversion is needed !')
+
+                            # if mimetype btw existing cover and new cover doesn't match --> convertion is need to the old mimetype
+                            if mimetype_ != mimetypenew_:
+                                logging.debug(' Image cover subtypenew does not match  old = ' + mimetype_ + ' new = ' + mimetypenew_)
+                                logging.debug(' --> convertion iof the new cover is needed to the old mimetype  -> ' + mimetype_)
+
                     # Write file as result  into target epub
                     out_book.writestr(name, content)
 
