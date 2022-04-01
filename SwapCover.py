@@ -19,6 +19,8 @@ Logic to find the cover within an EPUB FILE
 '''
 
 # Imports
+from os.path import splitext
+
 import ebooklib
 import os
 import sys
@@ -123,10 +125,34 @@ def swap_cover(epubfile_source, epubfile_target, new_cover):
                                 logging.debug(' Image cover subtype  match --> existing = ' + mimetype_ + ' new = ' + mimetypenew_)
                                 logging.debug(' So no conversion is needed !')
 
-                            # if mimetype btw existing cover and new cover doesn't match --> convertion is need to the old mimetype
+                                # Replace the old content readed from existing cover by the newcover
+                                #TODO with new_cover.open(name, 'r') as new_cover_file:
+                                    #TODO content = new_cover_file.read()
+
+                            # if mimetype btw existing cover and new cover doesn't match --> convertion is need to
+                            # the old mimetype
                             if mimetype_ != mimetypenew_:
                                 logging.debug(' Image cover subtypenew does not match  old = ' + mimetype_ + ' new = ' + mimetypenew_)
                                 logging.debug(' --> convertion iof the new cover is needed to the old mimetype  -> ' + mimetype_)
+
+                                # Open new cover / convert to the initial mimetype /
+                                filename, extension = splitext(new_cover)
+                                try:
+                                    im = Image.open(filename + extension)
+                                    output_filemane = filename +'.'+ subtype
+                                    # Save the new cover file with the correct extension
+                                    im.save(filename +'.'+ subtype)
+                                except OSError:
+                                    print('Cannot convert %s' % file)
+
+                                # Verify Image
+                                im.show()
+
+                                # Replace the old content readed from existing cover by the new converted content
+                                #TODO with output_filemane.open(name, 'r') as new_cover_file:
+                                    #TODO content = new_cover_file.read()
+
+
 
                     # Write file as result  into target epub
                     out_book.writestr(name, content)
