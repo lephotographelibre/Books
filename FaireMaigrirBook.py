@@ -74,13 +74,34 @@ def main():
                             _images_number = _images_number + 1
                             content = compress_image(subtype, content, args)
 
-                    # Write current file into destination
-                    out_book.writestr(name, content)
+                        # Write current file into destination if type not None
+                        out_book.writestr(name, content)
 
     logging.info('-- Number of files in the initial file = ' + str(_files_number))
-    logging.info('-- Number of images in the initial file = ' + str(_images_number ))
+    logging.info('-- Number of images in the initial file = ' + str(_images_number))
     logging.info('-- Initial size = ' + str(os.path.getsize(args.in_epub_filepath)))
     logging.info('-- Final size = ' + str(os.path.getsize(args.out_epub_filepath)))
+    ratio = os.path.getsize(args.out_epub_filepath) / os.path.getsize(args.in_epub_filepath) * 100
+    logging.info('-- Ratio = ' + str(round(ratio)) + '%')
+
+'''
+def is_an_egg(in_book, name, args):
+    with in_book.open(name, 'r') as in_file:
+        content = in_file.read()
+        type_, encoding = mimetypes.guess_type(name)
+
+        if type_:
+            type_, subtype = type_.split('/')
+            if type_ == 'image':
+                # -- Add new check here
+                # TODO Check size > 3 MB
+                if os.path.getsize(args.in_epub_filepath)  > 3000000:
+                    logging.debug('-- Image file size = ' )
+            return False
+        # No type it's an egg
+        else:
+            return True
+'''
 
 
 def compress_image(subtype, old_content, args):
