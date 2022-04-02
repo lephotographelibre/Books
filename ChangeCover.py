@@ -13,10 +13,6 @@ from PIL import Image
 # - item id cover
 # - <guide> --> cover page --> cover image
 
-## TODO
-# Open the epub file as a zip file
-# extract / Remove cover
-# replace/Insert a new jpeg file as cover
 
 ## See also docs at http://docs.sourcefabric.org/projects/ebooklib/en/latest/tutorial.html#reading-epub
 '''
