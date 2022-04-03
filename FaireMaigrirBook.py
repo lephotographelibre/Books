@@ -1,7 +1,7 @@
 # From https://github.com/jmdigne
 #
 # Usage
-# $ python FaireMaigrirBook input_file.epub output_file.epub --jpeg-quality=25 --log-level=info
+# $ python FaireMaigrirBook /ssdhome/jm/PycharmProjects/Books/test_avec_eggs.epub --jpeg-quality=25 --log-level=info
 #
 # TODO
 # add --fonts:
@@ -26,7 +26,7 @@ is_an_egg = remove all the existing easter egge with the book (file named conten
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('in_epub_filepath')
-    parser.add_argument('out_epub_filepath')
+    # parser.add_argument('out_epub_filepath')
     parser.add_argument('-l', '--log-level')
     parser.add_argument('--jpeg-quality', type=int, default=75)
     parser.add_argument('--image-resize-percent', type=int)
@@ -42,6 +42,10 @@ def main():
 
     if not os.path.isfile(args.in_epub_filepath):
         raise FileNotFoundError(args.in_epub_filepath)
+    # Get the filename from input file abd define output filename adding _light.epub at the end
+    logging.info('-- Input filename = ' + args.in_epub_filepath)
+    args.out_epub_filepath = args.in_epub_filepath.split('.')[0]+'_light.epub'
+    logging.info('-- Output filename = ' + args.out_epub_filepath)
 
     if os.path.isdir(args.out_epub_filepath):
         args.out_epub_filepath = os.path.join(
@@ -50,10 +54,15 @@ def main():
     if args.out_epub_filepath == args.in_epub_filepath:
         raise FileExistsError(args.out_epub_filepath)
 
+
+
+
+
     # Variables
     _files_number = 0
     _images_number = 0
     _font_number = 0
+
     # MAIN LOOP - Open epub file as a zip then iterate
     with zipfile.ZipFile(args.in_epub_filepath, 'r') as in_book:
         with zipfile.ZipFile(args.out_epub_filepath, 'w') as out_book:
@@ -72,6 +81,7 @@ def main():
                         if type_ == 'image':
                             _images_number = _images_number + 1
                             content = compress_image(subtype, content, args)
+                    # modify content if it's an egg
                     else:
                         content = is_an_egg(name, content, args)
 
@@ -101,7 +111,6 @@ def is_an_egg(name, old_content, args):
         return old_content
     else:
         # Egg detected
-
         logging.info('!!! EGG REMOVED  -----> Name = ' + name + ' Size = ' + str(len(old_content)))
         # modify content with a dummy binary object
         new_content = b"Bytes objects are immutable sequences of single bytes"
