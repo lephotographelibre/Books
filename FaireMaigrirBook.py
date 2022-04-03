@@ -18,11 +18,8 @@ from PIL import Image
 
 '''
 compress_image = compress  images jpeg defined by  args --jpeg-quality=25
-remove_fonts = remove all the fonts within book args --remove_fonts=yes
-easter_eggs = remove all the existing easter egge with the book (file named content, images files with size > 3 MB;..) 
-            --remove_eggs=yes
-is_an_egg = retrun True if we can identify this file as an egg (increase the logic based on name , size, mimetype, 
-            extension 
+is_a_font = test if it's a font file
+is_an_egg = remove all the existing easter egge with the book (file named content, images files with size > 3 MB;..)           
 '''
 
 
@@ -56,10 +53,12 @@ def main():
     # Variables
     _files_number = 0
     _images_number = 0
+    _font_number = 0
     # MAIN LOOP - Open epub file as a zip then iterate
     with zipfile.ZipFile(args.in_epub_filepath, 'r') as in_book:
         with zipfile.ZipFile(args.out_epub_filepath, 'w') as out_book:
             for name in in_book.namelist():
+                logging.debug('-- file name -- ' + name)
                 _files_number = _files_number + 1
                 with in_book.open(name, 'r') as in_file:
                     content = in_file.read()
@@ -73,38 +72,55 @@ def main():
                         if type_ == 'image':
                             _images_number = _images_number + 1
                             content = compress_image(subtype, content, args)
+                    else:
+                        content = is_an_egg(name, content, args)
 
-                        # Write current file into destination if type not None
+                    # Write current file into destination if not a font file
+                    if not is_a_font_file(name):
                         out_book.writestr(name, content)
+                    else:
+                        _font_number = _font_number + 1
 
     logging.info('-- Number of files in the initial file = ' + str(_files_number))
     logging.info('-- Number of images in the initial file = ' + str(_images_number))
+    if _font_number > 0:
+        logging.info('-- Number of font files removed =  = ' + str(_font_number))
     logging.info('-- Initial size = ' + str(os.path.getsize(args.in_epub_filepath)))
     logging.info('-- Final size = ' + str(os.path.getsize(args.out_epub_filepath)))
     ratio = os.path.getsize(args.out_epub_filepath) / os.path.getsize(args.in_epub_filepath) * 100
-    logging.info('-- Ratio = ' + str(round(ratio)) + '%')
+    logging.info('-- Compression Ratio = ' + str(100 - round(ratio)) + '%')
 
-'''
-def is_an_egg(in_book, name, args):
-    with in_book.open(name, 'r') as in_file:
-        content = in_file.read()
-        type_, encoding = mimetypes.guess_type(name)
 
-        if type_:
-            type_, subtype = type_.split('/')
-            if type_ == 'image':
-                # -- Add new check here
-                # TODO Check size > 3 MB
-                if os.path.getsize(args.in_epub_filepath)  > 3000000:
-                    logging.debug('-- Image file size = ' )
-            return False
-        # No type it's an egg
-        else:
-            return True
-'''
+def is_an_egg(name, old_content, args):
+    # TODO To Be improved
+    if name == 'mimetype':
+        return old_content
+
+    (head, tail) = os.path.split(name)
+    if tail == 'toc.ncx':
+        return old_content
+    else:
+        # Egg detected
+
+        logging.info('!!! EGG REMOVED  -----> Name = ' + name + ' Size = ' + str(len(old_content)))
+        # modify content with a dummy binary object
+        new_content = b"Bytes objects are immutable sequences of single bytes"
+        return new_content
+
+
+def is_a_font_file(name):
+    (head, tail) = os.path.split(name)
+    ext = name.split('.')[-1]
+    # logging.info('!!! is_a_font_file -----> Name = ' + name + ' extension = ' + ext)
+    if ext == 'ttf':
+        # logging.info('!!! FONTS DETECTED  -----> Name = ' + name + ' extension = ' + ext)
+        return True
+    else:
+        return False
 
 
 def compress_image(subtype, old_content, args):
+    logging.debug('-- compress_image -- ' + subtype)
     if subtype not in {'jpeg', 'jpg', 'png'}:
         return old_content
 
@@ -115,8 +131,8 @@ def compress_image(subtype, old_content, args):
         original_size = img.size
         new_size = (int(original_size[0] * args.image_resize_percent),
                     int(original_size[1] * args.image_resize_percent))
-        logging.debug('old size: %s', original_size)
-        logging.debug('new size: %s', new_size)
+        logging.debug('-- image_resize_percent -- old size: %s', original_size)
+        logging.debug('-- image_resize_percent -- new size: %s', new_size)
 
         resample = None
         if args.image_resize_resample:
@@ -144,8 +160,8 @@ def compress_image(subtype, old_content, args):
 
     new_content = out_buffer.getvalue()
 
-    logging.debug('old content length: %s', len(old_content))
-    logging.debug('new content length: %s', len(new_content))
+    logging.debug('-- compress_image -- old content length: %s', len(old_content))
+    logging.debug('-- compress_image -- new content length: %s', len(new_content))
 
     return new_content
 
