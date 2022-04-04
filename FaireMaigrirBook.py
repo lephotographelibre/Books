@@ -4,8 +4,9 @@
 # $ python FaireMaigrirBook /ssdhome/jm/PycharmProjects/Books/test_avec_eggs.epub --jpeg-quality=25 --log-level=info
 #
 # TODO
-# add --fonts:
-# how to detect an egg ? size > 4 MB, mimetype without extension ? name content ? no reference within opf file
+# -- add a resize_cover 800px x YYYpx
+#    - cover detection (is this file the cover)
+#    - resize width = 800px or less
 #
 import argparse
 import logging
@@ -28,7 +29,7 @@ def main():
     parser.add_argument('in_epub_filepath')
     # parser.add_argument('out_epub_filepath')
     parser.add_argument('-l', '--log-level')
-    parser.add_argument('--jpeg-quality', type=int, default=75)
+    parser.add_argument('--jpeg-quality', type=int, default=50)
     parser.add_argument('--image-resize-percent', type=int)
 
     args = parser.parse_args()
