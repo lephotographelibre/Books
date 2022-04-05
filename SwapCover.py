@@ -36,7 +36,6 @@ import mimetypes
 from datetime import datetime
 from time import gmtime, strftime
 
-
 '''
 
 '''
@@ -63,7 +62,6 @@ def swap_cover(epubfile_source, epubfile_target, new_cover):
     epubfile_source = args.in_epub_filepath
     date = datetime.today().strftime('_%H_%M_%S')
     epubfile_target = args.out_epub_filepath
-
 
     # Is there at least 1 image file within this epub file
     if get_image_number(epubfile_source) < 1:
@@ -122,26 +120,29 @@ def swap_cover(epubfile_source, epubfile_target, new_cover):
                                 logging.debug(' new cover subtype = ' + subtypenew)
 
                             if mimetype_ == mimetypenew_:
-                                logging.debug(' Image cover subtype  match --> existing = ' + mimetype_ + ' new = ' + mimetypenew_)
+                                logging.debug(
+                                    ' Image cover subtype  match --> existing = ' + mimetype_ + ' new = ' + mimetypenew_)
                                 logging.debug(' So no conversion is needed !')
 
                                 # Replace the old content readed from existing cover by the newcover
-                                #TODO with new_cover.open(name, 'r') as new_cover_file:
-                                    #TODO content = new_cover_file.read()
+                                # TODO with new_cover.open(name, 'r') as new_cover_file:
+                                # TODO content = new_cover_file.read()
 
                             # if mimetype btw existing cover and new cover doesn't match --> convertion is need to
                             # the old mimetype
                             if mimetype_ != mimetypenew_:
-                                logging.debug(' Image cover subtypenew does not match  old = ' + mimetype_ + ' new = ' + mimetypenew_)
-                                logging.debug(' --> convertion iof the new cover is needed to the old mimetype  -> ' + mimetype_)
+                                logging.debug(
+                                    ' Image cover subtypenew does not match  old = ' + mimetype_ + ' new = ' + mimetypenew_)
+                                logging.debug(
+                                    ' --> convertion iof the new cover is needed to the old mimetype  -> ' + mimetype_)
 
                                 # Open new cover / convert to the initial mimetype /
                                 filename, extension = splitext(new_cover)
                                 try:
                                     im = Image.open(filename + extension)
-                                    output_filemane = filename +'.'+ subtype
+                                    output_filemane = filename + '.' + subtype
                                     # Save the new cover file with the correct extension
-                                    im.save(filename +'.'+ subtype)
+                                    im.save(filename + '.' + subtype)
                                 except OSError:
                                     print('Cannot convert %s' % file)
 
@@ -149,15 +150,14 @@ def swap_cover(epubfile_source, epubfile_target, new_cover):
                                 im.show()
 
                                 # Replace the old content readed from existing cover by the new converted content
-                                #TODO with output_filemane.open(name, 'r') as new_cover_file:
-                                    #TODO content = new_cover_file.read()
-
-
+                                # TODO with output_filemane.open(name, 'r') as new_cover_file:
+                                # TODO content = new_cover_file.read()
 
                     # Write file as result  into target epub
                     out_book.writestr(name, content)
 
-#TODO
+
+# TODO
 # open an nested loop for out book        with zipfile.ZipFile(args.out_epub_filepath, 'w') as out_book:
 # convert image if needed
 # insert the new image into the epub out
