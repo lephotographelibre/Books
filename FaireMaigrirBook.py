@@ -7,6 +7,7 @@
 # -- add a resize_cover 800px x YYYpx
 #    - cover detection (is this file the cover)
 #    - resize width = 800px or less
+# -- add egg included epub to be removed
 #
 import argparse
 import logging
