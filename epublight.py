@@ -42,6 +42,7 @@ def main():
         # print('-- Log Level Num = ' + str(log_level_num))
         logging.basicConfig(level=log_level_num)
     else:
+        # default is INFO if missing from command line
         logging.basicConfig(level=logging.INFO)
 
     if not os.path.isfile(args.in_epub_filepath):
@@ -134,7 +135,13 @@ def compress_image(subtype, old_content, args):
         return old_content
 
     in_buffer = io.BytesIO(old_content)
-    img = Image.open(in_buffer)
+    try:
+        img = Image.open(in_buffer)
+    except:
+        # Decompression bomb protection see https://github.com/python-pillow/Pillow/issues/515
+        print("!!! WARNING !!!! Egg ---> DecompressionBombError")
+        new_content = b"Bytes objects are immutable sequences of single bytes"
+        return new_content
 
     if args.image_resize_percent:
         original_size = img.size
