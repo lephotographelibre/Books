@@ -7,7 +7,7 @@
 # -- add a resize_cover 800px x YYYpx
 #    - cover detection (is this file the cover)
 #    - resize width = 800px or less
-# -- add egg included epub to be removed
+
 #
 import argparse
 import logging
@@ -43,7 +43,8 @@ def main():
         logging.basicConfig(level=log_level_num)
     else:
         # default is INFO if missing from command line
-        logging.basicConfig(level=logging.INFO)
+        #logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
 
     if not os.path.isfile(args.in_epub_filepath):
         raise FileNotFoundError(args.in_epub_filepath)
@@ -88,7 +89,11 @@ def main():
 
                     # Write current file into destination if not a font file
                     if not is_a_font_file(name):
-                        out_book.writestr(name, content)
+                        if name == 'mimetype':
+                            # Add the mimetype file first and set it to be uncompressed
+                            out_book.writestr(name, content)
+                        else:
+                            out_book.writestr(name, content, compress_type=zipfile.ZIP_DEFLATED)
                     else:
                         _font_number = _font_number + 1
 
