@@ -18,12 +18,6 @@ import zipfile
 import io
 from PIL import Image
 
-'''
-compress_image = compress  images jpeg defined by  args --jpeg-quality=25
-is_a_font = test if it's a font file
-is_an_egg = remove all the existing easter egge with the book (file named content, images files with size > 3 MB;..)           
-'''
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -93,6 +87,7 @@ def main():
                             # Add the mimetype file first and set it to be uncompressed
                             out_book.writestr(name, content)
                         else:
+                            # Compress content except for mimetype
                             out_book.writestr(name, content, compress_type=zipfile.ZIP_DEFLATED)
                     else:
                         _font_number = _font_number + 1
@@ -116,11 +111,16 @@ def is_an_egg(name, old_content, args):
     if tail == 'toc.ncx':
         return old_content
     else:
-        # Egg detected
-        logging.info('!!! EGG REMOVED  -----> Name = ' + name + ' Size = ' + str(len(old_content)))
-        # modify content with a dummy binary object
-        new_content = b"Bytes objects are immutable sequences of single bytes"
-        return new_content
+        if len(old_content) == 0:
+            # github Issue 1: don't remove empty directories  (content size=0)
+            logging.debug('!!! NOT AN EGG  -----> Name = ' + name + ' Size = ' + str(len(old_content)))
+            return old_content
+        else:
+            # Egg detected
+            logging.info('!!! EGG REMOVED  -----> Name = ' + name + ' Size = ' + str(len(old_content)))
+            # modify content with a dummy binary object
+            new_content = b"Bytes objects are immutable sequences of single bytes"
+            return new_content
 
 
 def is_a_font_file(name):
@@ -185,6 +185,16 @@ def compress_image(subtype, old_content, args):
     logging.debug('-- compress_image -- new content length: %s', len(new_content))
 
     return new_content
+
+
+def resize_image(img_input, basewidth):
+    """
+    This script will resize an image (img_input) using PIL to a width  and a height proportional to basewidth
+    """
+    wpercent = (basewidth / float(img_input.size[0]))
+    hsize = int((float(img_input.size[1]) * float(wpercent)))
+    img = img_input.resize((basewidth, hsize), Image.LANCZOS)
+    return img
 
 
 if __name__ == "__main__":
