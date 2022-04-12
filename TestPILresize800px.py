@@ -13,15 +13,12 @@ def main():
     img2.show()
 
 
-'''
-This script will resize an image (somepic.jpg) using PIL (Python Imaging Library) to a width of 300 pixels and a 
-height proportional to the new width. It does this by determining what percentage 300 pixels is of the original width 
-(img.size[0]) and then multiplying the original height (img.size[1]) by that percentage. 
-Change "basewidth" to any other number to change the default width of your images.
-'''
-
-
 def resize_image(img_input, basewidth):
+    """
+    This script will resize an image (some-pic.jpg) using PIL to a width   and a height proportional to the new width
+    Param: img_input IMAGE, basewidth int
+    Return: IMAGE
+    """
     wpercent = (basewidth / float(img_input.size[0]))
     hsize = int((float(img_input.size[1]) * float(wpercent)))
     img = img_input.resize((basewidth, hsize), Image.LANCZOS)

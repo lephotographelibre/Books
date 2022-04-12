@@ -8,8 +8,8 @@
 # - resize cover (basewidth = 800px)
 # - compute compression ratio
 #
-# code to locate/identify the cover is  from https://github.com/paulocheque/epub-meta
-# code to compress images is from From https://github.com/murrple-1/epub-shrink
+# code to locate/identify the cover is from https://github.com/paulocheque/epub-meta
+# code to compress images is from https://github.com/murrple-1/epub-shrink
 
 import argparse
 import base64
@@ -40,8 +40,9 @@ def main():
     parser.add_argument('--jpeg-quality', type=int, default=50)
     parser.add_argument('--image-resize-percent', type=int)
     parser.add_argument('--image-resize-resample')
-
     args = parser.parse_args()
+
+    print('-- epublight args --', str(args))
 
     if args.log_level:
         log_level_num = getattr(logging, args.log_level.upper(), None)
@@ -51,8 +52,8 @@ def main():
         logging.basicConfig(level=log_level_num)
     else:
         # default is INFO if missing from command line
-        logging.basicConfig(level=logging.INFO)
-        # logging.basicConfig(level=logging.DEBUG)
+        # logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
 
     if not os.path.isfile(args.in_epub_filepath):
         raise FileNotFoundError(args.in_epub_filepath)
@@ -72,6 +73,7 @@ def main():
     _files_number = 0
     _images_number = 0
     _font_number = 0
+    is_cover = False
 
     # MAIN LOOP - Open epub file as a zip then iterate
     with zipfile.ZipFile(args.in_epub_filepath, 'r') as in_book:
@@ -90,8 +92,7 @@ def main():
                         if type_ == 'image':
                             _images_number = _images_number + 1
                             # cover detection
-                            is_cover = False
-                            if name == _locate_cover(args.in_epub_filepath):
+                            if name == _locate_cover(args.in_epub_filepath) and is_cover == False:
                                 is_cover = True
                                 logging.debug(
                                     '-- cover found --------------' + name + ' ... isCover = ' + str(is_cover))
@@ -179,8 +180,8 @@ def compress_image(subtype, old_content, args):
 
     if args.image_resize_percent:
         original_size = img.size
-        new_size = (int(original_size[0] * args.image_resize_percent/100),
-                    int(original_size[1] * args.image_resize_percent/100))
+        new_size = (int(original_size[0] * args.image_resize_percent / 100),
+                    int(original_size[1] * args.image_resize_percent / 100))
         logging.debug('-- image_resize_percent -- old size: %s', original_size)
         logging.debug('-- image_resize_percent -- new size: %s', new_size)
 
@@ -232,13 +233,14 @@ def resize_cover(subtype, old_content, args, base_width):
 
     original_size = img.size
     wpercent = (base_width / float(img.size[0]))
+    logging.debug('-- cover wpercent = ' + str(float(wpercent)))
     hsize = int((float(img.size[1]) * float(wpercent)))
     new_size = (800, hsize)
 
     logging.debug('-- cover old size: %s', original_size)
     logging.debug('-- cover new size: %s', new_size)
 
-    if int(float(wpercent)) > 1:
+    if float(wpercent) > 1.0:
         # do not Resize
         logging.debug('-- cover old size: < 800px -- Skip resize')
         return old_content
@@ -295,7 +297,8 @@ def _locate_cover(epub_filepath):
         raise EPubException("Cannot parse raw metadata from {}".format(
             os.path.basename(epub_filepath)))
 
-    cover_image_content, cover_image_extension, cover_image_filepath = _discover_cover_image(zf, opf_xmldoc,  opf_filepath)
+    cover_image_content, cover_image_extension, cover_image_filepath = _discover_cover_image(zf, opf_xmldoc,
+                                                                                             opf_filepath)
 
     logging.debug(' -- locate cover - file path = ' + cover_image_filepath)
     return cover_image_filepath

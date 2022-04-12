@@ -25,7 +25,7 @@ if not os.path.isfile(epubfile):
     print("File not found: " + epubfile)
     exit()
 '''
-epubfile = 'test.epub'
+epubfile = 'samples/test.epub'
 
 # Let's define the required XML namespaces
 namespaces = {
@@ -57,7 +57,8 @@ def get_epub_cover(epub_path):
                                 namespaces=namespaces)[0].get("full-path")
         print("Path of root file found: " + rootfile_path)
 
-        # We load the "root" file, indicated by the "full_path" attribute of "META-INF/container.xml", using lxml.etree.fromString():
+        # We load the "root" file, indicated by the "full_path" attribute of "META-INF/container.xml",
+        # using lxml.etree.fromString():
         t = etree.fromstring(z.read(rootfile_path))
         # We use xpath() to find the attribute "content":
         '''
