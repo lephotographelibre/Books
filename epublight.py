@@ -238,7 +238,13 @@ def resize_cover(subtype, old_content, args, base_width):
     logging.debug('-- cover old size: %s', original_size)
     logging.debug('-- cover new size: %s', new_size)
 
-    img = img.resize((base_width, hsize), Image.LANCZOS)
+    if int(float(wpercent)) > 1:
+        # do not Resize
+        logging.debug('-- cover old size: < 800px -- Skip resize')
+        return old_content
+    else:
+        # Resize
+        img = img.resize((base_width, hsize), Image.LANCZOS)
 
     format_ = None
     params = {}
