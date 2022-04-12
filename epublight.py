@@ -49,7 +49,7 @@ def main():
         logging.basicConfig(level=log_level_num)
     else:
         # default is INFO if missing from command line
-        #logging.basicConfig(level=logging.INFO)
+        # logging.basicConfig(level=logging.INFO)
         logging.basicConfig(level=logging.DEBUG)
 
     if not os.path.isfile(args.in_epub_filepath):
@@ -76,15 +76,9 @@ def main():
         with zipfile.ZipFile(args.out_epub_filepath, 'w') as out_book:
             for name in in_book.namelist():
                 logging.debug('-- file name -- ' + name)
-                # cover detection
-                is_cover = False
-                if name == _locate_cover(args.in_epub_filepath):
-                    is_cover = True
-                    logging.debug('-- cover found --------------' + name + ' ... isCover = ' + str(is_cover))
                 _files_number = _files_number + 1
                 with in_book.open(name, 'r') as in_file:
                     content = in_file.read()
-
                     type_, encoding = mimetypes.guess_type(name)
 
                     if type_:
@@ -93,7 +87,17 @@ def main():
                         # Compress jpeg image
                         if type_ == 'image':
                             _images_number = _images_number + 1
-                            content = compress_image(subtype, content, args)
+                            # cover detection
+                            is_cover = False
+                            if name == _locate_cover(args.in_epub_filepath):
+                                is_cover = True
+                                logging.debug(
+                                    '-- cover found --------------' + name + ' ... isCover = ' + str(is_cover))
+                                # cover is resize to basewidth = 800 px
+                                content = resize_cover(subtype, content, args, 800)
+                            else:
+                                # Not a cover
+                                content = compress_image(subtype, content, args)
                     # modify content if it's an egg
                     else:
                         content = is_an_egg(name, content, args)
@@ -111,7 +115,6 @@ def main():
 
     in_book.close()
     out_book.close()
-
 
     # Display Stats
     logging.info('-- Number of files in the initial file = ' + str(_files_number))
@@ -174,8 +177,8 @@ def compress_image(subtype, old_content, args):
 
     if args.image_resize_percent:
         original_size = img.size
-        new_size = (int(original_size[0] * args.image_resize_percent),
-                    int(original_size[1] * args.image_resize_percent))
+        new_size = (int(original_size[0] * args.image_resize_percent/100),
+                    int(original_size[1] * args.image_resize_percent/100))
         logging.debug('-- image_resize_percent -- old size: %s', original_size)
         logging.debug('-- image_resize_percent -- new size: %s', new_size)
 
@@ -211,16 +214,49 @@ def compress_image(subtype, old_content, args):
     return new_content
 
 
-def resize_image(img_input, basewidth):
-    """
-    This script will resize an image (some-pic.jpg) using PIL to a width   and a height proportional to the new width
-    Param: img_input IMAGE, basewidth int
-    Return: IMAGE
-    """
-    wpercent = (basewidth / float(img_input.size[0]))
-    hsize = int((float(img_input.size[1]) * float(wpercent)))
-    img = img_input.resize((basewidth, hsize), Image.LANCZOS)
-    return img
+def resize_cover(subtype, old_content, args, base_width):
+    logging.debug('-- resize_cover -- ' + subtype)
+    if subtype not in {'jpeg', 'jpg', 'png'}:
+        return old_content
+
+    in_buffer = io.BytesIO(old_content)
+    try:
+        img = Image.open(in_buffer)
+    except:
+        # Decompression bomb protection see https://github.com/python-pillow/Pillow/issues/515
+        print("!!! WARNING !!!! Egg ---> DecompressionBombError")
+        new_content = b"Bytes objects are immutable sequences of single bytes"
+        return new_content
+
+    original_size = img.size
+    wpercent = (base_width / float(img.size[0]))
+    hsize = int((float(img.size[1]) * float(wpercent)))
+    new_size = (800, hsize)
+
+    logging.debug('-- cover old size: %s', original_size)
+    logging.debug('-- cover new size: %s', new_size)
+
+    img = img.resize((base_width, hsize), Image.LANCZOS)
+
+    format_ = None
+    params = {}
+    if subtype == 'jpeg' or subtype == 'jpg':
+        format_ = 'JPEG'
+        params['quality'] = args.jpeg_quality
+        params['optimize'] = True
+    elif subtype == 'png':
+        format_ = 'PNG'
+        params['optimize'] = True
+
+    out_buffer = io.BytesIO()
+    img.save(out_buffer, format_, **params)
+
+    new_content = out_buffer.getvalue()
+
+    logging.debug('-- resize_cover -- old content length: %s', len(old_content))
+    logging.debug('-- resize_cover -- new content length: %s', len(new_content))
+
+    return new_content
 
 
 class EPubException(Exception):
@@ -251,7 +287,8 @@ def _locate_cover(epub_filepath):
         raise EPubException("Cannot parse raw metadata from {}".format(
             os.path.basename(epub_filepath)))
 
-    cover_image_content, cover_image_extension, cover_image_filepath = _discover_cover_image(zf, opf_xmldoc, opf_filepath)
+    cover_image_content, cover_image_extension, cover_image_filepath = _discover_cover_image(zf, opf_xmldoc,
+                                                                                             opf_filepath)
     return cover_image_filepath
 
     # print("-- cover_image_content = " + str(cover_image_content))
@@ -330,7 +367,6 @@ def find_tag(xmldoc, tag_name, attr, value):
     for tag in xmldoc.getElementsByTagName(tag_name):
         if attr in tag.attributes.keys() and tag.attributes[attr].value == value:
             return tag
-
 
 
 if __name__ == "__main__":
