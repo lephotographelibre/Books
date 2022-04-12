@@ -3,12 +3,14 @@
 # Usage
 # $ python epub_light.py  test.epub --jpeg-quality=25 --log-level=info
 #
-# TODO
-# -- add a resize_cover 800px x YYYpx
-#    - cover detection (is this file the cover)
-#    - resize width = 800px or less
-
+# - remove eggs from epub files (image bomb + bullshit content added to increase the file size))
+# - reduce images quality (jpg and png) parameter --jpeg_quality
+# - resize cover (basewidth = 800px)
+# - compute compression ratio
 #
+# code to locate/identify the cover is  from https://github.com/paulocheque/epub-meta
+# code to compress images is from From https://github.com/murrple-1/epub-shrink
+
 import argparse
 import base64
 import io
@@ -49,8 +51,8 @@ def main():
         logging.basicConfig(level=log_level_num)
     else:
         # default is INFO if missing from command line
-        # logging.basicConfig(level=logging.INFO)
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.INFO)
+        # logging.basicConfig(level=logging.DEBUG)
 
     if not os.path.isfile(args.in_epub_filepath):
         raise FileNotFoundError(args.in_epub_filepath)
@@ -215,7 +217,7 @@ def compress_image(subtype, old_content, args):
 
 
 def resize_cover(subtype, old_content, args, base_width):
-    logging.debug('-- resize_cover -- ' + subtype)
+    logging.info('-- Resize_cover to basewidth = 800px --')
     if subtype not in {'jpeg', 'jpg', 'png'}:
         return old_content
 
@@ -287,8 +289,9 @@ def _locate_cover(epub_filepath):
         raise EPubException("Cannot parse raw metadata from {}".format(
             os.path.basename(epub_filepath)))
 
-    cover_image_content, cover_image_extension, cover_image_filepath = _discover_cover_image(zf, opf_xmldoc,
-                                                                                             opf_filepath)
+    cover_image_content, cover_image_extension, cover_image_filepath = _discover_cover_image(zf, opf_xmldoc,  opf_filepath)
+
+    logging.debug(' -- locate cover - file path = ' + cover_image_filepath)
     return cover_image_filepath
 
     # print("-- cover_image_content = " + str(cover_image_content))
@@ -336,10 +339,12 @@ def _discover_cover_image(zf, opf_xmldoc, opf_filepath):
 
     # If we have found the cover image path:
     if filepath:
+        logging.debug('-- _discover_cover_image file path before normalization = ' + filepath)
         # The cover image path is relative to the OPF file
         base_dir = os.path.dirname(opf_filepath)
         # Also, normalize the path (ie opfpath/../cover.jpg -> cover.jpg)
         coverpath = os.path.normpath(os.path.join(base_dir, filepath))
+        logging.debug('-- _discover_cover_image file path after normalization = ' + coverpath)
         try:
             content = zf.read(coverpath)
         except KeyError:
@@ -347,7 +352,9 @@ def _discover_cover_image(zf, opf_xmldoc, opf_filepath):
                 coverpath, os.path.basename(zf.filename)))
         content = base64.b64encode(content)
 
-    return content, extension, filepath
+    # return content, extension, filepath
+    # Change to correct issue #3 (cover path doesn't match)
+    return content, extension, coverpath
 
 
 def find_img_tag(xmldoc, tag_name, attr, value):
