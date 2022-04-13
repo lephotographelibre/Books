@@ -52,7 +52,7 @@ def main():
         logging.basicConfig(level=log_level_num)
     else:
         # default is INFO if missing from command line
-        # logging.basicConfig(level=logging.INFO)
+        #logging.basicConfig(level=logging.INFO)
         logging.basicConfig(level=logging.DEBUG)
 
     if not os.path.isfile(args.in_epub_filepath):
@@ -360,7 +360,8 @@ def _discover_cover_image(zf, opf_xmldoc, opf_filepath):
             raise EPubException("Cannot read {} from EPub file {}".format(
                 coverpath, os.path.basename(zf.filename)))
         content = base64.b64encode(content)
-
+    else:
+        coverpath = ''
     # return content, extension, filepath
     # Change to correct issue #3 (cover path doesn't match)
     return content, extension, coverpath
